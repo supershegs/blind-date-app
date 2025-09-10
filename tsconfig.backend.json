@@ -1,0 +1,61 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "allowImportingTsExtensions": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "outDir": "./dist",
+    "composite": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    }
+  },
+  "include": ["server/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "dist", "client"]
+}
+
+// {
+//   "compilerOptions": {
+//     "target": "ES2020",
+//     "useDefineForClassFields": true,
+//     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+//     "module": "ESNext",
+//     "skipLibCheck": true,
+    
+//     "moduleResolution": "bundler",
+//     "allowImportingTsExtensions": true,
+//     "isolatedModules": true,
+//     "moduleDetection": "force",
+//     // "noEmit": true,
+//     "jsx": "react-jsx",
+//     "esModuleInterop": true,
+//     "allowSyntheticDefaultImports": true,
+//     "forceConsistentCasingInFileNames": true,
+    
+//     "strict": false,
+//     "noUnusedLocals": false,
+//     "noUnusedParameters": false,
+//     "noImplicitAny": false,
+//     "noFallthroughCasesInSwitch": false,
+//     "strictNullChecks": false,
+    
+//     "noEmit": false,
+//     "emitDeclarationOnly": true,
+//     "composite": true,
+
+//     "baseUrl": ".",
+//     "paths": {
+//       "@shared/*": ["./shared/*"]
+//     }
+//   },
+//   "include": ["server/**/*", "shared/**/*"],
+//   "exclude": ["node_modules", "dist"]
+// }

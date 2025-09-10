@@ -1,0 +1,54 @@
+// Prisma schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  username    String       @unique
+  email       String       @unique
+  password    String
+  role        String       @default("user")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isActive    Boolean      @default(true)
+  isVerified  Boolean      @default(false)
+
+  // relation
+  profile     UserProfile?
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  lastname    String   @db.VarChar(50)
+  firstname   String   @db.VarChar(50)
+  middlename  String?  @db.VarChar(50)
+  dob         DateTime?
+  phoneNum    String?  @db.VarChar(20)
+  sex         String?  @db.VarChar(10)
+  imageUpload String?  @db.Text
+  address     String   @db.VarChar(200)
+  state       String   @db.VarChar(50)
+  city        String   @db.VarChar(50)
+  localGovt   String   @db.VarChar(50)
+  bio         String?  @db.VarChar(500)
+  interest    String?  @db.VarChar(200)
+  heightFt    Float?
+  weightKg    Float?
+  complexion  String?  @db.VarChar(50)
+  hobbies     String?  @db.VarChar(200)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("user_profiles")
+}

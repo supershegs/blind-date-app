@@ -5,6 +5,22 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import multer from 'multer';
 
+// Fail fast if important env vars are missing in non-production. Set
+// FAIL_ON_MISSING_ENVS=1 to make missing envs fatal (useful for CI).
+const requiredEnvs = ['JWT_SECRET', 'DATABASE_URL'];
+if (process.env.NODE_ENV !== 'production') {
+  const missing = requiredEnvs.filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    const msg = `⚠️  Missing env vars: ${missing.join(', ')}. Some features may not work until these are set.`;
+    if (process.env.FAIL_ON_MISSING_ENVS === '1') {
+      console.error(msg);
+      process.exit(1);
+    } else {
+      console.warn(msg);
+    }
+  }
+}
+
 import { authenticateToken } from "./middleware/auth.ts";
 import { requireAdminOnly } from "./middleware/userRoleCheck.ts";
 import { handleDemo } from "./routes/demo.ts";
@@ -14,6 +30,7 @@ import { handleLogin } from "./routes/login.ts";
 import { handleViewUserProfile } from "./routes/view_userprofile.ts";
 import { handleEditUserProfile } from "./routes/edit_userprofile.ts";
 import { handleViewAllUserProfiles } from "./routes/view_all_userprofiles.ts";
+import { handleFindMatches } from "./routes/find_matches.ts";
 
 export function createServer(): Express {
   const app = express();
@@ -74,7 +91,7 @@ export function createServer(): Express {
   app.post("/api/user/:userId/profile", authenticateToken ,upload.single('imageUpload'), handleUserProfileRegistration);
   app.get("/api/user/:userId/profile", authenticateToken ,handleViewUserProfile);
   app.put("/api/user/:userId/profile", authenticateToken, upload.single('imageUpload'), handleEditUserProfile);
-
+  app.get("/api/user/:userId/matches", authenticateToken, handleFindMatches);
 
 
 

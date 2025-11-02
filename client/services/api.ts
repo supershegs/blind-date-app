@@ -217,6 +217,10 @@ class ApiService {
     return this.request(`/user/${userId}/profile`);
   }
 
+  async findMatches(userId: number, page: number = 1, limit: number = 10): Promise<any> {
+    return this.request(`/user/${userId}/matches?page=${page}&limit=${limit}`);
+  }
+
 
    async updateUserProfile(userId: number, profileData: ProfileRequest, imageFile?: File): Promise<ProfileResponse> {
       const validatedData = ProfileRequestSchema.parse(profileData);

@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Partners from './pages/Partners';
 import NotFound from './pages/NotFound';
 import EditProfile from './pages/EditProfile';
+import Matches from './pages/Matches';
 import CreateProfileRoute from './components/CreateProfileRoute';
 import EditProfileRoute from './components/EditProfileRoute';
 
@@ -63,12 +64,14 @@ function App() {
                 </EditProfileRoute>
               } 
             />
-            <Route path="/matches" element={
-              <PlaceholderPage
-                title="Your Matches"
-                description="Discover compatible singles in your area and send match requests."
-              />
-            } />
+            <Route 
+              path="/matches" 
+              element={
+                <ProtectedRoute>
+                  <Matches />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/dates" element={
               <PlaceholderPage
                 title="Your Dates"

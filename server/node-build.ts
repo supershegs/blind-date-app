@@ -7,8 +7,29 @@ const app = createServer();
 const port = process.env.PORT || 3000;
 
 // In production, serve the built SPA files
-const __dirname = import.meta.dirname;
-const distPath = path.join(__dirname, "../spa");
+// Derive a safe dirname for both ESM and CommonJS. If import.meta is not
+// available (older TS module settings), fall back to process.cwd().
+function getDistPath() {
+  try {
+    // prefer ESM-aware filename when available
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { fileURLToPath } = require('url');
+    // import.meta may not be available in some TS compile modes, so guard access
+    // @ts-ignore - here we access import.meta only when running in ESM runtime
+    const metaUrl = (typeof (global as any).importMetaUrl !== 'undefined') ? (global as any).importMetaUrl : (typeof (globalThis as any).importMetaUrl !== 'undefined' ? (globalThis as any).importMetaUrl : undefined);
+    if (metaUrl) {
+      const filename = fileURLToPath(metaUrl);
+      return path.join(path.dirname(filename), '../spa');
+    }
+  } catch {
+    // ignore
+  }
+
+  // Fallback to process.cwd() — this is safe for most production builds
+  return path.join(process.cwd(), 'dist', 'spa');
+}
+
+const distPath = getDistPath();
 
 // Serve static files
 app.use(express.static(distPath));

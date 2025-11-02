@@ -78,8 +78,7 @@ export const handleUserRegistration: RequestHandler = async (req, res) => {
     // Log error without exposing sensitive data
 	console.error("Registration error:", error.message);
 
-	return
-    res.status(500).json({
+	res.status(500).json({
       success: false,
       message: "Registration failed. Please try again.",
 	  error: process.env.NODE_ENV === 'development' ? error.message : undefined

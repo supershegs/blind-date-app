@@ -183,13 +183,47 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-blind-pink hover:underline font-medium">
-                Sign up here
-              </Link>
-            </p>
+          <div className="mt-6 space-y-4">
+            {/* Demo login buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full bg-emerald-100 hover:bg-emerald-200 text-emerald-700"
+                onClick={() => {
+                  setFormData({
+                    email: 'demo.user@example.com',
+                    password: 'demouser123',
+                    rememberMe: false
+                  });
+                }}
+              >
+                Demo User Login
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full bg-purple-100 hover:bg-purple-200 text-purple-700"
+                onClick={() => {
+                  setFormData({
+                    email: 'demo.admin@example.com',
+                    password: 'demoadmin123',
+                    rememberMe: false
+                  });
+                }}
+              >
+                Demo Admin Login
+              </Button>
+            </div>
+
+            <div className="text-center">
+              <p className="text-gray-600">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-blind-pink hover:underline font-medium">
+                  Sign up here
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
 

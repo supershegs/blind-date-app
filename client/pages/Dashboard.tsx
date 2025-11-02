@@ -128,11 +128,15 @@ export default function Dashboard() {
           <p className="text-gray-600">Browse matches, send requests, and plan amazing dates!</p>
           
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
+            <Card className="cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => window.location.href = `/matches`}>
               <CardContent className="p-6 text-center">
                 <Heart className="h-12 w-12 mx-auto text-blind-pink mb-4" />
                 <h3 className="font-semibold text-gray-900 mb-2">Find Matches</h3>
                 <p className="text-gray-600 text-sm">Discover compatible partners based on your preferences</p>
+                <Button className="mt-4 bg-gradient-to-r from-blind-pink to-blind-purple hover:from-blind-pink/90 hover:to-blind-purple/90">
+                  View Matches
+                </Button>
               </CardContent>
             </Card>
             

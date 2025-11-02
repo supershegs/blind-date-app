@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "vite --port 8080",
-    "dev:server": "npx ts-node --project tsconfig.backend.json server/index.ts",
+    "dev:server": "tsx server/index.ts",
     "dev:both": "concurrently \"npm run dev:server\" \"npm run dev\"",
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
@@ -21,10 +21,14 @@
     "test": "vitest --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
+    "typecheck:server": "tsc -p tsconfig.backend.json",
+    "db:create": "node ./scripts/create-db.cjs",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed-demo": "tsx prisma/seed-demo-data.ts"
   },
   "dependencies": {
     "@prisma/client": "6.14.0",
@@ -75,6 +79,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.84.2",
     "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.7",
@@ -86,6 +91,7 @@
     "@types/three": "^0.176.0",
     "@vitejs/plugin-react-swc": "^4.0.0",
     "autoprefixer": "^10.4.21",
+    "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

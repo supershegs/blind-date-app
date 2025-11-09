@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { apiService } from '../services/api';
 import { Skeleton } from '../components/ui/skeleton';
+import ProfileViewModal from '../components/ProfileViewModal';
 
 interface MatchProfile {
   id: number;
@@ -17,7 +18,9 @@ interface MatchProfile {
   matchPercentage: number;
   hobbies?: string;
   interest?: string;
+  userId: number;
   user: {
+    id: number;
     username: string;
     isVerified: boolean;
   };
@@ -29,6 +32,10 @@ export default function Matches() {
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState<any>(null);
+  const [connectingTo, setConnectingTo] = useState<number | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   useEffect(() => {
     if (!apiService.isAuthenticated()) {
@@ -36,6 +43,7 @@ export default function Matches() {
       return;
     }
     loadMatches();
+    checkConnectionStatus();
   }, [page]);
 
   const loadMatches = async () => {
@@ -60,6 +68,53 @@ export default function Matches() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const checkConnectionStatus = async () => {
+    try {
+      const currentUser = apiService.getCurrentUser();
+      if (!currentUser) return;
+
+      const response = await apiService.getConnectionStatus(currentUser.userId);
+      if (response.success) {
+        setConnectionStatus(response.connection);
+      }
+    } catch (error: any) {
+      console.error('Failed to check connection status:', error);
+    }
+  };
+
+  const handleConnect = async (receiverId: number) => {
+    try {
+      const currentUser = apiService.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No user found');
+      }
+
+      setConnectingTo(receiverId);
+
+      const response = await apiService.sendConnection(currentUser.userId, receiverId);
+      
+      if (response.success) {
+        setConnectionStatus(response.connection);
+        alert('Connection request sent successfully! 🎉');
+        await checkConnectionStatus();
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to send connection request');
+    } finally {
+      setConnectingTo(null);
+    }
+  };
+
+  const handleViewProfile = (userId: number) => {
+    setSelectedProfileId(userId);
+    setIsProfileModalOpen(true);
+  };
+
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    setSelectedProfileId(null);
   };
 
   const calculateAge = (dob: string) => {
@@ -121,6 +176,15 @@ export default function Matches() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <h1 className="text-2xl font-bold text-gray-900">Your Matches</h1>
           <p className="text-gray-600">Discover people who share your interests</p>
+          
+          {connectionStatus && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>ℹ️ Active Connection:</strong> You have an active connection. 
+                You can only connect to one person at a time. Please disconnect first if you'd like to connect with someone else.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -138,7 +202,7 @@ export default function Matches() {
                 <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <CardContent className="p-0">
                     <div className="relative">
-                      <div className="aspect-w-3 aspect-h-2">
+                      <div className="w-full h-64 overflow-hidden">
                         {match.imageUpload ? (
                           <img
                             src={match.imageUpload}
@@ -147,7 +211,7 @@ export default function Matches() {
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <User className="h-12 w-12 text-gray-400" />
+                            <User className="h-16 w-16 text-gray-400" />
                           </div>
                         )}
                       </div>
@@ -158,7 +222,10 @@ export default function Matches() {
 
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 
+                          className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blind-pink transition-colors"
+                          onClick={() => handleViewProfile(match.userId)}
+                        >
                           {match.firstname} {match.lastname?.[0]}.
                           {match.user.isVerified && (
                             <span className="ml-2 text-blue-500">✓</span>
@@ -192,10 +259,19 @@ export default function Matches() {
 
                       <Button
                         className="w-full bg-gradient-to-r from-blind-pink to-blind-purple hover:from-blind-pink/90 hover:to-blind-purple/90"
-                        onClick={() => {/* TODO: Implement connect/message functionality */}}
+                        onClick={() => handleConnect(match.user.id)}
+                        disabled={
+                          !!connectionStatus || 
+                          connectingTo === match.user.id
+                        }
                       >
                         <Mail className="h-4 w-4 mr-2" />
-                        Connect
+                        {connectingTo === match.user.id 
+                          ? 'Sending...' 
+                          : connectionStatus
+                            ? 'Already Connected'
+                            : 'Connect'
+                        }
                       </Button>
                     </div>
                   </CardContent>
@@ -217,6 +293,17 @@ export default function Matches() {
           </>
         )}
       </div>
+
+      {/* Profile View Modal */}
+      {selectedProfileId && (
+        <ProfileViewModal
+          userId={selectedProfileId}
+          isOpen={isProfileModalOpen}
+          onClose={handleCloseProfileModal}
+          onConnect={handleConnect}
+          hasActiveConnection={!!connectionStatus}
+        />
+      )}
     </div>
   );
 }

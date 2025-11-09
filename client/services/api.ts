@@ -221,6 +221,31 @@ class ApiService {
     return this.request(`/user/${userId}/matches?page=${page}&limit=${limit}`);
   }
 
+  async sendConnection(userId: number, receiverId: number): Promise<any> {
+    return this.request(`/user/${userId}/connections`, {
+      method: 'POST',
+      body: JSON.stringify({ receiverId }),
+    });
+  }
+
+  async getConnectionStatus(userId: number): Promise<any> {
+    return this.request(`/user/${userId}/connections/status`);
+  }
+
+  async acceptConnection(userId: number, connectionId: number): Promise<any> {
+    return this.request(`/user/${userId}/connections/accept`, {
+      method: 'PUT',
+      body: JSON.stringify({ connectionId }),
+    });
+  }
+
+  async disconnect(userId: number, connectionId: number): Promise<any> {
+    return this.request(`/user/${userId}/connections`, {
+      method: 'DELETE',
+      body: JSON.stringify({ connectionId }),
+    });
+  }
+
 
    async updateUserProfile(userId: number, profileData: ProfileRequest, imageFile?: File): Promise<ProfileResponse> {
       const validatedData = ProfileRequestSchema.parse(profileData);

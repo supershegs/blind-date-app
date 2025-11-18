@@ -27,9 +27,7 @@ export const handleFindMatches: RequestHandler = async (req, res) => {
       prisma.userProfile.findMany({
         where: {
           userId: { not: userId }, // Exclude current user
-          // Add basic matching criteria
-          sex: userProfile.interest === 'Both' ? undefined : userProfile.interest,
-          // You can add more matching criteria here
+          // Don't filter by sex/interest for now - show all potential matches
         },
         include: {
           user: {
@@ -50,34 +48,51 @@ export const handleFindMatches: RequestHandler = async (req, res) => {
       prisma.userProfile.count({
         where: {
           userId: { not: userId },
-          sex: userProfile.interest === 'Both' ? undefined : userProfile.interest,
         }
       })
     ]);
 
     // Calculate match percentage based on common interests/hobbies
     const matchesWithScore = matches.map(match => {
-      let score = 0;
-      const totalFactors = 4; // Number of factors we're considering
+      let score = 50; // Start with base score of 50%
 
       // Interest match
-      if (match.interest === userProfile.interest) score += 25;
+      if (match.interest && userProfile.interest && match.interest === userProfile.interest) {
+        score += 15;
+      }
       
       // Hobbies match (if any common hobbies)
       if (match.hobbies && userProfile.hobbies) {
-        const userHobbies = userProfile.hobbies.toLowerCase().split(',');
-        const matchHobbies = match.hobbies.toLowerCase().split(',');
-        if (userHobbies.some(hobby => matchHobbies.includes(hobby))) score += 25;
+        const userHobbies = userProfile.hobbies.toLowerCase().split(',').map(h => h.trim());
+        const matchHobbies = match.hobbies.toLowerCase().split(',').map(h => h.trim());
+        const commonHobbies = userHobbies.filter(hobby => matchHobbies.includes(hobby));
+        if (commonHobbies.length > 0) {
+          score += Math.min(20, commonHobbies.length * 10); // Up to 20 points
+        }
       }
 
       // Location match (same city)
-      if (match.city === userProfile.city) score += 25;
+      if (match.city && userProfile.city && match.city === userProfile.city) {
+        score += 10;
+      }
+
+      // Same state (if not same city)
+      if (match.state && userProfile.state && match.state === userProfile.state && match.city !== userProfile.city) {
+        score += 5;
+      }
 
       // Age range match (within 5 years)
       if (match.dob && userProfile.dob) {
         const ageDiff = Math.abs(match.dob.getFullYear() - userProfile.dob.getFullYear());
-        if (ageDiff <= 5) score += 25;
+        if (ageDiff <= 5) {
+          score += 10;
+        } else if (ageDiff <= 10) {
+          score += 5;
+        }
       }
+
+      // Cap at 100%
+      score = Math.min(100, score);
 
       return {
         ...match,

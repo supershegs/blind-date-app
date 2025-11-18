@@ -22,6 +22,7 @@ export const handleViewUserProfile: RequestHandler = async (req, res) => {
             id: true,
             username: true,
             email: true,
+            isVerified: true,
             createdAt: true
           }
         }

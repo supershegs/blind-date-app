@@ -31,6 +31,7 @@ import { handleViewUserProfile } from "./routes/view_userprofile.ts";
 import { handleEditUserProfile } from "./routes/edit_userprofile.ts";
 import { handleViewAllUserProfiles } from "./routes/view_all_userprofiles.ts";
 import { handleFindMatches } from "./routes/find_matches.ts";
+import { handleSendConnection, handleGetConnectionStatus, handleAcceptConnection, handleDisconnect } from "./routes/connections.ts";
 
 export function createServer(): Express {
   const app = express();
@@ -92,6 +93,12 @@ export function createServer(): Express {
   app.get("/api/user/:userId/profile", authenticateToken ,handleViewUserProfile);
   app.put("/api/user/:userId/profile", authenticateToken, upload.single('imageUpload'), handleEditUserProfile);
   app.get("/api/user/:userId/matches", authenticateToken, handleFindMatches);
+  
+  // Connection routes
+  app.post("/api/user/:userId/connections", authenticateToken, handleSendConnection);
+  app.get("/api/user/:userId/connections/status", authenticateToken, handleGetConnectionStatus);
+  app.put("/api/user/:userId/connections/accept", authenticateToken, handleAcceptConnection);
+  app.delete("/api/user/:userId/connections", authenticateToken, handleDisconnect);
 
 
 
@@ -102,8 +109,17 @@ export function createServer(): Express {
 
 // Start the server
 const app = createServer();
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
+const PORT = parseInt(process.env.PORT || '3000');
+const HOST = '127.0.0.1';
+
+app.listen(PORT, HOST, () => {
+  console.log(`✅ Server listening on http://${HOST}:${PORT}`);
   console.log(`🔍 Debug: Server started at ${new Date().toISOString()}`);
+}).on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  } else {
+    console.error('❌ Server error:', err);
+  }
+  process.exit(1);
 });

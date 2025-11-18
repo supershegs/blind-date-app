@@ -30,12 +30,12 @@ export default function Matches() {
   const [matches, setMatches] = useState<MatchProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
   const [connectingTo, setConnectingTo] = useState<number | null>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [hasActiveConnection, setHasActiveConnection] = useState(false);
+  const [connectedUserId, setConnectedUserId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!apiService.isAuthenticated()) {
@@ -44,7 +44,7 @@ export default function Matches() {
     }
     loadMatches();
     checkConnectionStatus();
-  }, [page]);
+  }, []);
 
   const loadMatches = async () => {
     try {
@@ -53,15 +53,15 @@ export default function Matches() {
         throw new Error('No user found');
       }
 
-      const response = await apiService.findMatches(currentUser.userId, page);
+      const response = await apiService.findMatches(currentUser.userId);
       
       if (response.success) {
-        if (page === 1) {
-          setMatches(response.matches);
-        } else {
-          setMatches(prev => [...prev, ...response.matches]);
+        setMatches(response.matches);
+        setHasActiveConnection(response.hasActiveConnection || false);
+        setConnectedUserId(response.connectedUserId || null);
+        if (response.connection) {
+          setConnectionStatus(response.connection);
         }
-        setHasMore(page < response.pagination.totalPages);
       }
     } catch (error: any) {
       setError(error.message || 'Failed to load matches');
@@ -81,6 +81,27 @@ export default function Matches() {
       }
     } catch (error: any) {
       console.error('Failed to check connection status:', error);
+    }
+  };
+
+  const handleAcceptPending = async () => {
+    try {
+      const currentUser = apiService.getCurrentUser();
+      if (!currentUser || !connectionStatus) return;
+      if (connectionStatus.status !== 'pending') return;
+      setConnectingTo(connectionStatus.senderId); // reuse state for loading indicator
+      const resp = await apiService.acceptConnection(currentUser.userId, connectionStatus.id);
+      if (resp.success) {
+        setConnectionStatus(resp.connection);
+        setHasActiveConnection(true);
+        const partnerId = resp.connection.senderId === currentUser.userId ? resp.connection.receiverId : resp.connection.senderId;
+        setConnectedUserId(partnerId);
+        await loadMatches();
+      }
+    } catch (e:any) {
+      console.error('Accept connection error', e);
+    } finally {
+      setConnectingTo(null);
     }
   };
 
@@ -129,11 +150,11 @@ export default function Matches() {
     return age;
   };
 
-  if (loading && page === 1) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[1, 2, 3].map((i) => (
             <Card key={i}>
               <CardContent className="p-6">
                 <Skeleton className="h-48 w-full rounded-lg mb-4" />
@@ -159,7 +180,6 @@ export default function Matches() {
             className="mt-4"
             onClick={() => {
               setError('');
-              setPage(1);
               loadMatches();
             }}
           >
@@ -174,14 +194,16 @@ export default function Matches() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">Your Matches</h1>
-          <p className="text-gray-600">Discover people who share your interests</p>
+          <h1 className="text-2xl font-bold text-gray-900">Your Top 3 Matches</h1>
+          <p className="text-gray-600">
+            Discover your best compatibility matches - connect with one to continue
+          </p>
           
-          {connectionStatus && (
+          {hasActiveConnection && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>ℹ️ Active Connection:</strong> You have an active connection. 
-                You can only connect to one person at a time. Please disconnect first if you'd like to connect with someone else.
+                <strong>ℹ️ Active Connection:</strong> You have connected with someone. 
+                Other matches are shown but disabled until you disconnect.
               </p>
             </div>
           )}
@@ -192,14 +214,28 @@ export default function Matches() {
         {matches.length === 0 ? (
           <div className="text-center py-12">
             <Heart className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No matches found</h2>
-            <p className="text-gray-600">Try adjusting your preferences or check back later</p>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No matches available</h2>
+            <p className="text-gray-600">
+              {hasActiveConnection 
+                ? 'Your current connection is being processed'
+                : 'Complete your profile or check back later for new matches'
+              }
+            </p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {matches.map((match) => (
-                <Card key={match.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              {matches.map((match) => {
+                const isThisUserConnected = match.userId === connectedUserId;
+                const shouldGrayOut = hasActiveConnection && !isThisUserConnected;
+                
+                return (
+                <Card 
+                  key={match.id} 
+                  className={`overflow-hidden hover:shadow-lg transition-shadow ${
+                    shouldGrayOut ? 'opacity-50 pointer-events-none' : ''
+                  }`}
+                >
                   <CardContent className="p-0">
                     <div className="relative">
                       <div className="w-full h-64 overflow-hidden">
@@ -261,35 +297,44 @@ export default function Matches() {
                         className="w-full bg-gradient-to-r from-blind-pink to-blind-purple hover:from-blind-pink/90 hover:to-blind-purple/90"
                         onClick={() => handleConnect(match.user.id)}
                         disabled={
-                          !!connectionStatus || 
+                          shouldGrayOut ||
+                          (!!connectionStatus && !isThisUserConnected) || 
                           connectingTo === match.user.id
                         }
                       >
                         <Mail className="h-4 w-4 mr-2" />
                         {connectingTo === match.user.id 
-                          ? 'Sending...' 
-                          : connectionStatus
-                            ? 'Already Connected'
-                            : 'Connect'
+                          ? 'Building...' 
+                          : isThisUserConnected && hasActiveConnection
+                            ? 'Connection Built'
+                            : shouldGrayOut
+                              ? 'Unavailable'
+                              : 'Build Connection'
                         }
                       </Button>
+                      {isThisUserConnected && connectionStatus?.status === 'accepted' && (
+                        <Button
+                          className="w-full mt-2 bg-gradient-to-r from-blind-purple to-blind-pink hover:from-blind-purple/90 hover:to-blind-pink/90"
+                          onClick={() => window.location.href = '/connection-chat'}
+                        >
+                          Open Chat
+                        </Button>
+                      )}
+                      {connectionStatus?.status === 'pending' && match.user.id === connectionStatus.senderId && (
+                        <Button
+                          className="w-full mt-2 bg-green-600 hover:bg-green-700"
+                          disabled={connectingTo !== null}
+                          onClick={handleAcceptPending}
+                        >
+                          {connectingTo !== null ? 'Accepting...' : 'Accept Connection'}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
-
-            {hasMore && (
-              <div className="text-center mt-8">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={loading}
-                >
-                  {loading ? 'Loading...' : 'Load More Matches'}
-                </Button>
-              </div>
-            )}
           </>
         )}
       </div>

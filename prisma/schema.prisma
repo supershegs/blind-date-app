@@ -24,6 +24,9 @@ model User {
   profile            UserProfile?
   sentConnections    Connection[] @relation("SentConnections")
   receivedConnections Connection[] @relation("ReceivedConnections")
+  sentMessages       Message[] @relation("SentMessages")
+  receivedMessages   Message[] @relation("ReceivedMessages")
+  proposedDatePlans  DatePlan[] @relation("ProposerDatePlans")
 
   @@map("users")
 }
@@ -65,7 +68,42 @@ model Connection {
 
   sender      User     @relation("SentConnections", fields: [senderId], references: [id], onDelete: Cascade)
   receiver    User     @relation("ReceivedConnections", fields: [receiverId], references: [id], onDelete: Cascade)
+  datePlans   DatePlan[] @relation("ConnectionDatePlans")
 
   @@unique([senderId, receiverId])
   @@map("connections")
+}
+model Message {
+  id          Int      @id @default(autoincrement())
+  senderId    Int
+  receiverId  Int
+  content     String   @db.Text
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId, receiverId])
+  @@index([receiverId])
+  @@map("messages")
+}
+
+model DatePlan {
+  id            Int       @id @default(autoincrement())
+  connectionId  Int       // Link to accepted connection
+  proposerId    Int       // Who proposed the date
+  dateTime      DateTime  // Proposed date & time
+  location      String    @db.VarChar(200)
+  notes         String?   @db.VarChar(500)
+  status        String    @default("proposed") // proposed, accepted, declined, cancelled
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  connection    Connection @relation("ConnectionDatePlans", fields: [connectionId], references: [id], onDelete: Cascade)
+  proposer      User       @relation("ProposerDatePlans", fields: [proposerId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId])
+  @@map("date_plans")
 }

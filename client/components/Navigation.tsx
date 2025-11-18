@@ -10,6 +10,7 @@ export function Navigation() {
   const [hasProfile, setHasProfile] = useState(false);
   const [userImage, setUserImage] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [acceptedConnectionUserId, setAcceptedConnectionUserId] = useState<number | null>(null);
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
@@ -42,9 +43,25 @@ export function Navigation() {
           setHasProfile(false);
           setUserImage(null);
         }
+
+        // Fetch connection status to see if there's an accepted connection for chat
+        try {
+          const connectionResp = await apiService.getConnectionStatus(currentUser.userId);
+          if (connectionResp.success && connectionResp.connection && connectionResp.connection.status === 'accepted') {
+            // Determine partner id
+            const c = connectionResp.connection;
+            const partnerId = c.senderId === currentUser.userId ? c.receiverId : c.senderId;
+            setAcceptedConnectionUserId(partnerId);
+          } else {
+            setAcceptedConnectionUserId(null);
+          }
+        } catch {
+          setAcceptedConnectionUserId(null);
+        }
       }
     } else {
       setUserImage(null);
+      setAcceptedConnectionUserId(null);
     }
   };
 
@@ -73,14 +90,16 @@ export function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
-              }`}
-            >
-              Home
-            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
+                }`}
+              >
+                Home
+              </Link>
+            )}
             {isAuthenticated && (
               <Link
                 to="/dashboard"
@@ -91,22 +110,46 @@ export function Navigation() {
                 Dashboard
               </Link>
             )}
-            <Link
-              to="/how-it-works"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/how-it-works') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
-              }`}
-            >
-              How It Works
-            </Link>
-            <Link
-              to="/partners"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/partners') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
-              }`}
-            >
-              Partners
-            </Link>
+            {isAuthenticated && acceptedConnectionUserId && (
+              <Link
+                to="/connection-chat"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/connection-chat') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
+                }`}
+              >
+                Chat
+              </Link>
+            )}
+            {isAuthenticated && acceptedConnectionUserId && (
+              <Link
+                to="/plan-date"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/plan-date') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
+                }`}
+              >
+                Plan Date
+              </Link>
+            )}
+            {!isAuthenticated && (
+              <>
+                <Link
+                  to="/how-it-works"
+                  className={`text-sm font-medium transition-colors ${
+                    isActive('/how-it-works') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
+                  }`}
+                >
+                  How It Works
+                </Link>
+                <Link
+                  to="/partners"
+                  className={`text-sm font-medium transition-colors ${
+                    isActive('/partners') ? 'text-blind-pink' : 'text-gray-600 hover:text-blind-pink'
+                  }`}
+                >
+                  Partners
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Desktop Auth Buttons */}
@@ -175,15 +218,17 @@ export function Navigation() {
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link
-              to="/"
-              className={`block px-3 py-2 text-base font-medium rounded-md ${
-                isActive('/') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </Link>
+            {!isAuthenticated && (
+              <Link
+                to="/"
+                className={`block px-3 py-2 text-base font-medium rounded-md ${
+                  isActive('/') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+            )}
             {isAuthenticated && (
               <Link
                 to="/dashboard"
@@ -195,15 +240,50 @@ export function Navigation() {
                 Dashboard
               </Link>
             )}
-            <Link
-              to="/how-it-works"
-              className={`block px-3 py-2 text-base font-medium rounded-md ${
-                isActive('/how-it-works') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              How It Works
-            </Link>
+            {isAuthenticated && acceptedConnectionUserId && (
+              <Link
+                to="/connection-chat"
+                className={`block px-3 py-2 text-base font-medium rounded-md ${
+                  isActive('/connection-chat') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Chat
+              </Link>
+            )}
+            {isAuthenticated && acceptedConnectionUserId && (
+              <Link
+                to="/plan-date"
+                className={`block px-3 py-2 text-base font-medium rounded-md ${
+                  isActive('/plan-date') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
+                }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Plan Date
+              </Link>
+            )}
+            {!isAuthenticated && (
+              <>
+                <Link
+                  to="/how-it-works"
+                  className={`block px-3 py-2 text-base font-medium rounded-md ${
+                    isActive('/how-it-works') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  How It Works
+                </Link>
+                <Link
+                  to="/partners"
+                  className={`block px-3 py-2 text-base font-medium rounded-md ${
+                    isActive('/partners') ? 'text-blind-pink bg-blind-pink/10' : 'text-gray-600 hover:text-blind-pink hover:bg-gray-50'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Partners
+                </Link>
+              </>
+            )}
             
             <div className="border-t border-gray-200 pt-4 mt-4">
               {isAuthenticated ? (

@@ -15,6 +15,8 @@ import EditProfile from './pages/EditProfile';
 import Matches from './pages/Matches';
 import CreateProfileRoute from './components/CreateProfileRoute';
 import EditProfileRoute from './components/EditProfileRoute';
+import ConnectionChat from './pages/ConnectionChat';
+import PlanDate from './pages/PlanDate';
 
 
 
@@ -71,6 +73,22 @@ function App() {
                   <Matches />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/connection-chat" 
+              element={
+                <ProtectedRoute>
+                  <ConnectionChat />
+                </ProtectedRoute>
+              }
+            />
+            <Route 
+              path="/plan-date" 
+              element={
+                <ProtectedRoute>
+                  <PlanDate />
+                </ProtectedRoute>
+              }
             />
             <Route path="/dates" element={
               <PlaceholderPage

@@ -99,7 +99,7 @@ pnpm run db:studio        # Open Prisma Studio
 4. Both servers must be running for full functionality
 
 ## 🎯 Next Steps
-1. Run `start-both.bat` to start the application
+1. Run `start-both.bat` to start the application.
 2. Visit http://localhost:8080 for the frontend
 3. API endpoints available at http://localhost:3000/api
 4. Register a new user and test the authentication flow

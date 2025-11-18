@@ -32,6 +32,19 @@ import { handleEditUserProfile } from "./routes/edit_userprofile.ts";
 import { handleViewAllUserProfiles } from "./routes/view_all_userprofiles.ts";
 import { handleFindMatches } from "./routes/find_matches.ts";
 import { handleSendConnection, handleGetConnectionStatus, handleAcceptConnection, handleDisconnect } from "./routes/connections.ts";
+import { 
+  handleSendMessage, 
+  handleGetConversation, 
+  handleGetConversations, 
+  handleGetUnreadCount 
+} from './routes/messages.ts';
+import { 
+  handleProposeDate,
+  handleGetCurrentDatePlan,
+  handleAcceptDatePlan,
+  handleDeclineDatePlan,
+  handleCancelDatePlan
+} from './routes/date_plan.ts';
 
 export function createServer(): Express {
   const app = express();
@@ -99,6 +112,23 @@ export function createServer(): Express {
   app.get("/api/user/:userId/connections/status", authenticateToken, handleGetConnectionStatus);
   app.put("/api/user/:userId/connections/accept", authenticateToken, handleAcceptConnection);
   app.delete("/api/user/:userId/connections", authenticateToken, handleDisconnect);
+
+  // Messaging routes (activated only after accepted connection)
+  // Get a specific conversation with another user (userId here refers to the other participant)
+  app.get('/api/user/:userId/messages', authenticateToken, handleGetConversation);
+  // List all conversations (accepted connections + last message preview)
+  app.get('/api/user/conversations', authenticateToken, handleGetConversations);
+  // Unread count badge
+  app.get('/api/messages/unread-count', authenticateToken, handleGetUnreadCount);
+  // Send a message (receiverId in body)
+  app.post('/api/messages', authenticateToken, handleSendMessage);
+
+  // Date planning routes (require accepted connection)
+  app.get('/api/date-plan/current', authenticateToken, handleGetCurrentDatePlan);
+  app.post('/api/date-plan', authenticateToken, handleProposeDate);
+  app.put('/api/date-plan/:id/accept', authenticateToken, handleAcceptDatePlan);
+  app.put('/api/date-plan/:id/decline', authenticateToken, handleDeclineDatePlan);
+  app.delete('/api/date-plan/:id', authenticateToken, handleCancelDatePlan);
 
 
 

@@ -217,8 +217,8 @@ class ApiService {
     return this.request(`/user/${userId}/profile`);
   }
 
-  async findMatches(userId: number, page: number = 1, limit: number = 10): Promise<any> {
-    return this.request(`/user/${userId}/matches?page=${page}&limit=${limit}`);
+  async findMatches(userId: number): Promise<any> {
+    return this.request(`/user/${userId}/matches`);
   }
 
   async sendConnection(userId: number, receiverId: number): Promise<any> {
@@ -244,6 +244,50 @@ class ApiService {
       method: 'DELETE',
       body: JSON.stringify({ connectionId }),
     });
+  }
+
+  // Messaging APIs
+  async getConversation(partnerUserId: number): Promise<any> {
+    return this.request(`/user/${partnerUserId}/messages`);
+  }
+
+  async getConversations(): Promise<any> {
+    return this.request(`/user/conversations`);
+  }
+
+  async getUnreadCount(): Promise<any> {
+    return this.request(`/messages/unread-count`);
+  }
+
+  async sendMessage(receiverId: number, content: string): Promise<any> {
+    return this.request(`/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ receiverId, content }),
+    });
+  }
+
+  // Date planning APIs
+  async getCurrentDatePlan(): Promise<any> {
+    return this.request(`/date-plan/current`);
+  }
+
+  async proposeDate(dateTime: string, location: string, notes?: string): Promise<any> {
+    return this.request(`/date-plan`, {
+      method: 'POST',
+      body: JSON.stringify({ dateTime, location, notes })
+    });
+  }
+
+  async acceptDatePlan(id: number): Promise<any> {
+    return this.request(`/date-plan/${id}/accept`, { method: 'PUT' });
+  }
+
+  async declineDatePlan(id: number): Promise<any> {
+    return this.request(`/date-plan/${id}/decline`, { method: 'PUT' });
+  }
+
+  async cancelDatePlan(id: number): Promise<any> {
+    return this.request(`/date-plan/${id}`, { method: 'DELETE' });
   }
 
 

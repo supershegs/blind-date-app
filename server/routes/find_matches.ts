@@ -6,9 +6,6 @@ const prisma = new PrismaClient();
 export const handleFindMatches: RequestHandler = async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
 
     // Get current user's profile
     const userProfile = await prisma.userProfile.findUnique({
@@ -22,38 +19,40 @@ export const handleFindMatches: RequestHandler = async (req, res) => {
       });
     }
 
-    // Find potential matches based on preferences
-    const [matches, total] = await Promise.all([
-      prisma.userProfile.findMany({
-        where: {
-          userId: { not: userId }, // Exclude current user
-          // Don't filter by sex/interest for now - show all potential matches
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              createdAt: true,
-              isVerified: true,
-            }
-          }
-        },
-        orderBy: {
-          createdAt: 'desc'
-        },
-        skip,
-        take: limit
-      }),
-      prisma.userProfile.count({
-        where: {
-          userId: { not: userId },
-        }
-      })
-    ]);
+    // Check if user already has an active connection
+    const existingConnection = await prisma.connection.findFirst({
+      where: {
+        OR: [
+          { senderId: userId, status: { in: ['pending', 'accepted'] } },
+          { receiverId: userId, status: { in: ['pending', 'accepted'] } }
+        ]
+      }
+    });
 
-    // Calculate match percentage based on common interests/hobbies
-    const matchesWithScore = matches.map(match => {
+    // Get the connected user ID if exists
+    const connectedUserId = existingConnection
+      ? (existingConnection.senderId === userId ? existingConnection.receiverId : existingConnection.senderId)
+      : null;
+
+    // Find potential matches - get all profiles to properly rank them
+    const allMatches = await prisma.userProfile.findMany({
+      where: {
+        userId: { not: userId }, // Exclude current user
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            createdAt: true,
+            isVerified: true,
+          }
+        }
+      }
+    });
+
+    // Calculate match percentage for all profiles
+    const matchesWithScore = allMatches.map(match => {
       let score = 50; // Start with base score of 50%
 
       // Interest match
@@ -96,22 +95,28 @@ export const handleFindMatches: RequestHandler = async (req, res) => {
 
       return {
         ...match,
-        matchPercentage: score
+        matchPercentage: score,
+        isConnected: match.userId === connectedUserId
       };
     });
 
-    // Sort by match percentage
+    // Sort by match percentage (best matches first)
     matchesWithScore.sort((a, b) => b.matchPercentage - a.matchPercentage);
+
+    // Return only top 3 best matches
+    const top3Matches = matchesWithScore.slice(0, 3);
 
     res.json({
       success: true,
-      matches: matchesWithScore,
+      matches: top3Matches,
       pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
+        page: 1,
+        limit: 3,
+        total: top3Matches.length,
+        totalPages: 1
+      },
+      hasActiveConnection: !!existingConnection,
+      connectedUserId: connectedUserId
     });
   } catch (error: any) {
     console.error('Find matches error:', error);
